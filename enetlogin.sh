@@ -1,3 +1,4 @@
+#!/bin/bash
 loginurl="https://cas.sustc.edu.cn/cas/login"
 authip="219.134.142.194"
 username="YOUR_USER_NAME_HERE"
@@ -11,11 +12,11 @@ do
 		echo "Attempting to log in the enet system"
 		rm -f /tmp/cascookie
 
-		routerip=$(ifconfig | grep -A 1 "^eth0.2" | grep -P -o "(?<=inet addr:).*(?=  Bcast)")
+		routerip=$(ifconfig | grep -A 1 "eth3" | grep -o "\(inet addr:\).*  Bcast" | grep -o "[0-9\.]*")
 		eneturl="http://125.88.59.131:10001/sz/sz112/index.jsp?wlanuserip=$routerip&wlanacip=$authip"
-		execution=$(curl --silent --cookie-jar /tmp/cascookies -L "$eneturl" | grep -P -o '(?<=name="execution" value=").*(?="/><input type="hidden" name="_eventId)')
+		execution=$(curl --silent --cookie-jar /tmp/cascookies -k -L "$eneturl" | grep -o 'execution.*/><input type' | grep -o '[^"]\{50,\}')
 		
-		curl --silent --output /dev/null --cookie /tmp/cascookies --cookie-jar /tmp/cascookies -H "Content-Type: application/x-www-form-urlencoded" -L -X POST "$loginurl" --data "username=$username&password=$password&execution=$execution&_eventId=submit&geolocation="
+		curl --silent --output /dev/null --cookie /tmp/cascookies --cookie-jar /tmp/cascookies -H "Content-Type: application/x-www-form-urlencoded" -k -L -X POST "$loginurl" --data "username=$username&password=$password&execution=$execution&_eventId=submit&geolocation="
 	else
 		echo "Connected to Internet, recheck a second later"
 	fi
