@@ -12,7 +12,7 @@ do
 		echo "Attempting to log in the enet system"
 		rm -f /tmp/cascookie
 
-		routerip=$(ifconfig | grep -A 1 "eth3" | grep -o "\(inet addr:\).*  Bcast" | grep -o "[0-9\.]*")
+		routerip=$(ifconfig | grep -A 1 "eth0.2" | grep -o "\(inet addr:\).*  Bcast" | grep -o "[0-9\.]*")
 		eneturl="http://125.88.59.131:10001/sz/sz112/index.jsp?wlanuserip=$routerip&wlanacip=$authip"
 		execution=$(curl --silent --cookie-jar /tmp/cascookies -k -L "$eneturl" | grep -o 'execution.*/><input type' | grep -o '[^"]\{50,\}')
 		
