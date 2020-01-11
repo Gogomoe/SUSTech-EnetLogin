@@ -4,7 +4,7 @@ authip="219.134.142.194"
 username="YOUR_USER_NAME_HERE"
 password="YOUR_PASSWORD_HERE"
 
-header="User-Agent: Mozilla/5.0"
+header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
 
 is_connected=false
 timestamp=$(date "+%s")
@@ -16,15 +16,14 @@ do
   time=$(date "+[%Y.%m.%d %H:%M:%S]")
   timestamp_now=$(date "+%s")
 
-  if [ "x$ret_code" != "x200" ] ; then
-    echo "$time Attempting to log in the enet system"
-
-    rm -f /tmp/cascookie
+	if [ $ret_code -ne 200 ] ; then
+		echo "Attempting to log in the enet system"
+		rm -f /tmp/cascookie
 
     routerip=$(ifconfig | grep -A 1 "eth0.2" | grep -o "\(inet addr:\).*  Bcast" | grep -o "[0-9\.]*")
     eneturl="http://enet.10000.gd.cn:10001/sz/sz112/index.jsp?wlanuserip=$routerip&wlanacip=$authip"
-    execution=$(curl --silent --cookie-jar /tmp/cascookies -k -L "$eneturl" -H "$header" | grep -o 'execution.*/><input type' | grep -o '[^"]\{50,\}')
-    echo $execution;
+    execution=$(curl --silent --cookie-jar /tmp/cascookies -H "$header" -k -L "$eneturl" | grep -o 'execution.*/><input type' | grep -o '[^"]\{50,\}')
+
     curl --silent --output /dev/null --cookie /tmp/cascookies --cookie-jar /tmp/cascookies -H "Content-Type: application/x-www-form-urlencoded" -H "$header" -k -L -X POST "$loginurl" --data "username=$username&password=$password&execution=$execution&_eventId=submit&geolocation="
   else
     if [ "$is_connected" == false ] || [ $((timestamp_now - timestamp > 60*60*12)) ]; then
