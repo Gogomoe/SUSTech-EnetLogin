@@ -6,19 +6,19 @@ password="YOUR_PASSWORD_HERE"
 
 header="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
 
-is_connected=false
-timestamp=$(date "+%s")
+last_state="init"
+current_state="init"
 
-while true
-do
+last_timestamp=$(date "+%s")
+
+while true; do
   ret_code=$(curl -I -s --connect-timeout 5 http://www.baidu.com -w %{http_code} | tail -n1)
+  current_timestamp=$(date "+%s")
 
-  time=$(date "+[%Y.%m.%d %H:%M:%S]")
-  timestamp_now=$(date "+%s")
+  if [ "$ret_code" -ne 200 ]; then
+    current_state="TRY_CONNECT"
 
-	if [ $ret_code -ne 200 ] ; then
-		echo "Attempting to log in the enet system"
-		rm -f /tmp/cascookie
+    rm -f /tmp/cascookie
 
     routerip=$(ifconfig | grep -A 1 "eth0.2" | grep -o "\(inet addr:\).*  Bcast" | grep -o "[0-9\.]*")
     eneturl="http://enet.10000.gd.cn:10001/sz/sz112/index.jsp?wlanuserip=$routerip&wlanacip=$authip"
@@ -26,11 +26,20 @@ do
 
     curl --silent --output /dev/null --cookie /tmp/cascookies --cookie-jar /tmp/cascookies -H "Content-Type: application/x-www-form-urlencoded" -H "$header" -k -L -X POST "$loginurl" --data "username=$username&password=$password&execution=$execution&_eventId=submit&geolocation="
   else
-    if [ "$is_connected" == false ] || [ $((timestamp_now - timestamp > 60*60*12)) ]; then
-      timestamp=$timestamp_now
+    current_state="CONNECTED"
+  fi
+
+  if [ "$last_state" != "$current_state" ] || ((current_timestamp - last_timestamp > 60 * 60 * 12)); then
+    time=$(date "+[%Y.%m.%d %H:%M:%S]")
+    if [ $current_state == "CONNECTED" ]; then
       echo "$time Connected to Internet, recheck a second later"
     fi
-    is_connected=true
+    if [ $current_state == "TRY_CONNECT" ]; then
+      echo "$time Attempting to log in the enet system"
+    fi
+    last_state=$current_state
+    last_timestamp=$current_timestamp
   fi
+
   sleep 1s
 done
